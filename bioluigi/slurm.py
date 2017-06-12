@@ -7,7 +7,7 @@ import sys
 import dill
 import inspect
 
-from fieldpathogenomics.luigi.cluster import ClusterBase
+from .cluster import ClusterBase
 
 import logging
 alloc_log = logging.getLogger('alloc_log')
