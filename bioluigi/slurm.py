@@ -141,7 +141,7 @@ class SlurmTask(SlurmExecutableTask):
         return '''#!/bin/bash
                   source {python}
                   set -euo pipefail
-                  python -m fieldpathogenomics.luigi.task_runner {task} {module_path} {cwd}
+                  python -m bioluigi.luigi.task_runner {task} {module_path} {cwd}
                   '''.format(python=python,
                              task=self.job_file,
                              module_path=module_path,

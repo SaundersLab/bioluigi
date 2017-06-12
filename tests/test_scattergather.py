@@ -5,7 +5,8 @@ import luigi
 import luigi.mock
 import glob
 
-from .scattergather import ScatterGather
+from bioluigi.scattergather import ScatterGather
+from bioluigi.decorators import requires
 
 test_dir = os.path.split(__file__)[0]
 
@@ -43,10 +44,8 @@ class TestSimple(unittest.TestCase):
 
     def setUp(self):
         @ScatterGather(scatter, gather, 10)
+        @requires(testdata)
         class Simple(luigi.Task):
-
-            def requires(self):
-                return testdata()
 
             def run(self):
                 with self.input().open('r') as fin:
@@ -83,10 +82,8 @@ class TestMultiReqs(unittest.TestCase):
                 return t
 
         @ScatterGather(scatter, gather, 10)
+        @requires(testdata, OtherReq)
         class MultiReqs(luigi.Task):
-
-            def requires(self):
-                return [testdata(), OtherReq()]
 
             def run(self):
 

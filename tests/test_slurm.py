@@ -13,6 +13,7 @@ class TestExecOk(SlurmExecutableTask):
         super().__init__()
         self.n_cpu = 1
         self.mem = 100
+        self.partition = 'nbi-short'
 
     def output(self):
         return luigi.LocalTarget(os.path.join(test_dir, 'scratch', "SLURM_TestExecOk.txt"))
@@ -29,6 +30,7 @@ class TestExecFail(SlurmExecutableTask):
         super().__init__()
         self.n_cpu = 1
         self.mem = 100
+        self.partition = 'nbi-short'
 
     def work_script(self):
         return '''#!/bin/bash
@@ -55,6 +57,7 @@ class TestOk(SlurmTask):
         super().__init__()
         self.n_cpu = 1
         self.mem = 100
+        self.partition = 'nbi-short'
 
     def output(self):
         return luigi.LocalTarget(os.path.join(test_dir, 'scratch', "SLURM_TestOk.txt"))
@@ -70,6 +73,7 @@ class TestFail(SlurmTask):
         super().__init__()
         self.n_cpu = 1
         self.mem = 100
+        self.partition = 'nbi-short'
 
     def work(self):
         raise Exception()
