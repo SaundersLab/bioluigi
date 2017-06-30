@@ -14,7 +14,6 @@ class inherits(object):
     def __call__(self, task_that_inherits):
         tasks = self.tasks_to_inherit if isinstance(self.tasks_to_inherit, list) else self.tasks_to_inherit.values()
         for task_to_inherit in tasks:
-            print(task_to_inherit)
             for param_name, param_obj in task_to_inherit.get_params():
                 if not hasattr(task_that_inherits, param_name):
                     setattr(task_that_inherits, param_name, param_obj)
