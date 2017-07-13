@@ -135,7 +135,10 @@ class SlurmExecutableTask(luigi.Task, SlurmMixin):
 class SlurmTask(SlurmExecutableTask):
 
     def work_script(self):
-        python = os.path.join((os.environ['VIRTUAL_ENV']), 'bin', 'activate')
+        try:
+            python = os.path.join((os.environ['VIRTUAL_ENV']), 'bin', 'activate')
+        except KeyError:
+            python = '/dev/null' # Bit of a hack to nullify the source line if no virtual env is present
         cwd = os.getcwd()
         module_path = os.path.split(os.path.abspath(inspect.getsourcefile(self.__class__)))[0]
         return '''#!/bin/bash
