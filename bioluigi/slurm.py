@@ -165,6 +165,7 @@ class SlurmTask(SlurmExecutableTask):
                     pickle.dump(self, open(self.job_file, "wb"))
             except:
                 from copy import deepcopy
+                logger.ERROR("Pickle failed in task {}".format(self.task_id))
                 input = deepcopy(self.input())
                 output = deepcopy(self.output())
                 work = deepcopy(self.__class__.work)
