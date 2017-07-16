@@ -40,30 +40,52 @@ class testdata(luigi.ExternalTask):
         return t
 
 
+@ScatterGather(scatter, gather, 10)
+@requires(testdata)
+class Simple(luigi.Task):
+
+    def run(self):
+        with self.input().open('r') as fin:
+            with self.output().open('w') as fout:
+                for l in fin:
+                    fout.write("Done! " + l)
+
+    def output(self):
+        return luigi.LocalTarget(os.path.join(test_dir, "sgtest_out.txt"))
+
+
 class TestSimple(unittest.TestCase):
 
     def setUp(self):
-        @ScatterGather(scatter, gather, 10)
-        @requires(testdata)
-        class Simple(luigi.Task):
-
-            def run(self):
-                with self.input().open('r') as fin:
-                    with self.output().open('w') as fout:
-                        for l in fin:
-                            fout.write("Done! " + l)
-
-            def output(self):
-                return luigi.LocalTarget(os.path.join(test_dir, "sgtest_out.txt"))
-
         self.task = Simple()
 
     def test_simple(self):
-
         self.assertTrue(luigi.build([self.task], local_scheduler=True))
         with self.task.output().open('r') as f:
             out = f.read()
         self.assertEqual(out, '\n'.join(["Done! " + str(x) for x in range(100)]))
+        self.tearDown()
+
+    def test_fork(self):
+        self.assertTrue(luigi.build([self.task], local_scheduler=True, workers=5))
+        with self.task.output().open('r') as f:
+            out = f.read()
+        self.assertEqual(out, '\n'.join(["Done! " + str(x) for x in range(100)]))
+        self.tearDown()
+
+    def test_forkserver(self):
+        import multiprocessing_on_dill as multiprocessing
+        multiprocessing.set_start_method('forkserver')
+        self.assertTrue(luigi.build([self.task], local_scheduler=True, workers=5))
+        with self.task.output().open('r') as f:
+            out = f.read()
+        self.assertEqual(out, '\n'.join(["Done! " + str(x) for x in range(100)]))
+        self.tearDown()
+
+    #def test_pickle(self):
+    #    import dill
+    #    self.assertEqual(self.task.param_args, dill.loads(dill.dumps(Simple())).param_args)
+    #    self.assertEqual(str(self.task.__class__), str(dill.loads(dill.dumps(Simple())).__class__))
 
     def tearDown(self):
         for f in glob.glob(os.path.join(test_dir, "sgtest*")):
