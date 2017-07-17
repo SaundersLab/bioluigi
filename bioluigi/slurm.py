@@ -2,9 +2,8 @@ import os
 import re
 import subprocess
 import luigi
-import pickle as pickle
+import dill as pickle
 import sys
-import dill
 import inspect
 
 from .cluster import ClusterBase
@@ -138,7 +137,7 @@ class SlurmTask(SlurmExecutableTask):
         try:
             python = os.path.join((os.environ['VIRTUAL_ENV']), 'bin', 'activate')
         except KeyError:
-            python = '/dev/null' # Bit of a hack to nullify the source line if no virtual env is present
+            python = '/dev/null'  # Bit of a hack to nullify the source line if no virtual env is present
         cwd = os.getcwd()
         module_path = os.path.split(os.path.abspath(inspect.getsourcefile(self.__class__)))[0]
         return '''#!/bin/bash
@@ -171,7 +170,7 @@ class SlurmTask(SlurmExecutableTask):
                 work = deepcopy(self.__class__.work)
 
                 dummy = {k: deepcopy(v) for k, v in list(self.__dict__.items()) + [('input', lambda x: input), ('output', lambda x: output), ('work', work)]}
-                dill.dump(dummy, open(self.job_file, "wb"))
+                pickle.dump(dummy, open(self.job_file, "wb"))
 
     def run(self):
         # Bit of a hack, _init_tmp() also gets called again inside super().run()
