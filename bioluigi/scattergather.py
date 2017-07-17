@@ -77,7 +77,7 @@ class ScatterGather():
                 return dict(list(sup.items()) + list(extras.items()))
 
         Scatter.clone_parent = decorator.workTask.clone_parent
-        Scatter.__name__ = decorator.workTask.__name__ + 'Scatter'
+        #Scatter.__name__ = decorator.workTask.__name__ + 'Scatter'
         return Scatter
 
     @staticmethod
@@ -131,7 +131,7 @@ class ScatterGather():
                     return ScatterGather.metaProgGather(d, t)()
                 return mkGather, (decorator, gathertask)
 
-        Gather.__name__ = decorator.workTask.__name__ + 'Gather'
+        #Gather.__name__ = decorator.workTask.__name__ + 'Gather'
         return Gather
 
     def __init__(self, scatterTask, gatherTask, N):
