@@ -76,8 +76,7 @@ class ScatterGather():
         scatter_cls =  type(decorator.workTask.__name__ + 'Scatter', 
                            (scattertask, ), 
                            {'clone_parent':decorator.workTask.clone_parent, 'requires':requires, 'output':output,
-                             '__reduce__':__reduce__ })
-        scatter_cls.__module__ = '__main__'                     
+                             '__module__': '__main__'})
         return inherits(decorator.workTask)(scatter_cls)
 
     @staticmethod
@@ -102,8 +101,7 @@ class ScatterGather():
         work_cls =  type(decorator.workTask.__name__ + 'Work', 
                          (worktask, ), 
                          {'SG_index':luigi.IntParameter(), 'input':input, 'output':output,
-                          'requires':requires, '__reduce__':__reduce__ })
-        work_cls.__module__ = '__main__' 
+                          'requires':requires, '__module__': '__main__'})
         return work_cls
 
     @staticmethod
@@ -122,9 +120,8 @@ class ScatterGather():
         gather_cls = type(decorator.workTask.__name__ + 'Gather', 
                           (gathertask, ), 
                           {'SG_index':None, 'requires':requires, 'output':output, 
-                            '__reduce__':__reduce__ })
+                            '__module__': '__main__' })
         
-        gather_cls.__module__ = '__main__'        
         return inherits(decorator.workTask)(gather_cls)
 
     def __init__(self, scatterTask, gatherTask, N):
