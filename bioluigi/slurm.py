@@ -153,24 +153,26 @@ class SlurmTask(SlurmExecutableTask):
         """Dump instance to file."""
         with self.no_unpicklable_properties():
             self.job_file = os.path.join(self.tmp_dir, 'job-instance.pickle')
-            logger.info(self.__module__)
-            try:
-                if self.__module__ == '__main__':
-                    module_name = os.path.basename(sys.argv[0]).rsplit('.', 1)[0]
-                    d = pickle.dumps(self)
-                    d = d.replace(b'c__main__', b"c" + module_name.encode())
-                    open(self.job_file, "wb").write(d)
-                else:
-                    pickle.dump(self, open(self.job_file, "wb"))
-            except:
-                from copy import deepcopy
-                logger.error("Pickle failed in task {}".format(self.task_id))
-                input = deepcopy(self.input())
-                output = deepcopy(self.output())
-                work = deepcopy(self.__class__.work)
+            with open(self.job_file, "wb") as fpickle:
+                try:
+                    if self.__module__ == '__main__':
+                        logger.error("Pickle mode 1 in task {}".format(self.task_id))
+                        module_name = os.path.basename(sys.argv[0]).rsplit('.', 1)[0]
+                        d = pickle.dumps(self)
+                        d = d.replace(b'c__main__', b"c" + module_name.encode())
+                        fpickle.write(d)
+                    else:
+                        logger.error("Pickle mode 2 in task {}".format(self.task_id))
+                        pickle.dump(self, fpickle)
+                except:
+                    from copy import deepcopy
+                    logger.error("Pickle mode 3 in task {}".format(self.task_id))
+                    input = deepcopy(self.input())
+                    output = deepcopy(self.output())
+                    work = deepcopy(self.__class__.work)
 
-                dummy = {k: deepcopy(v) for k, v in list(self.__dict__.items()) + [('input', lambda x: input), ('output', lambda x: output), ('work', work)]}
-                pickle.dump(dummy, open(self.job_file, "wb"))
+                    dummy = {k: deepcopy(v) for k, v in list(self.__dict__.items()) + [('input', lambda x: input), ('output', lambda x: output), ('work', work)]}
+                    pickle.dump(dummy, fpickle)
 
     def run(self):
         # Bit of a hack, _init_tmp() also gets called again inside super().run()
