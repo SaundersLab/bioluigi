@@ -4,6 +4,7 @@ import os
 import luigi
 import luigi.mock
 import glob
+import dill
 
 from bioluigi.scattergather import ScatterGather
 from bioluigi.decorators import requires
@@ -53,6 +54,19 @@ class Simple(luigi.Task):
     def output(self):
         return luigi.LocalTarget(os.path.join(test_dir, "sgtest_out.txt"))
 
+@ScatterGather(scatter, gather, 10)
+@requires(Simple)
+class Sequential(luigi.Task):
+
+    def run(self):
+        with self.input().open('r') as fin:
+            with self.output().open('w') as fout:
+                for l in fin:
+                    fout.write("Done! " + l)
+
+    def output(self):
+        return luigi.LocalTarget(os.path.join(test_dir, "sgtest_out2.txt"))
+
 
 class TestSimple(unittest.TestCase):
 
@@ -82,16 +96,33 @@ class TestSimple(unittest.TestCase):
         self.assertEqual(out, '\n'.join(["Done! " + str(x) for x in range(100)]))
         self.tearDown()
 
-    #def test_pickle(self):
-    #    import dill
-    #    self.assertEqual(self.task.param_args, dill.loads(dill.dumps(Simple())).param_args)
-    #    self.assertEqual(str(self.task.__class__), str(dill.loads(dill.dumps(Simple())).__class__))
+    def test_pickle(self):
+        dill.detect.trace(True)
+        self.assertEqual(self.task.param_args, dill.loads(dill.dumps(Simple())).param_args)
+        self.assertEqual(str(self.task.__class__), str(dill.loads(dill.dumps(Simple())).__class__))
 
     def tearDown(self):
         for f in glob.glob(os.path.join(test_dir, "sgtest*")):
             os.remove(f)
 
-
+class TestSequential(unittest.TestCase):
+    def setUp(self):
+        self.task = Sequential()  
+        
+    def test_sequential(self):
+        self.assertTrue(luigi.build([self.task], local_scheduler=True))
+        with self.task.output().open('r') as f:
+            out = f.read()
+        self.assertEqual(out, '\n'.join(["Done! Done! " + str(x) for x in range(100)]))
+        
+    def test_pickle(self):
+        self.assertEqual(self.task.param_args, dill.loads(dill.dumps(self.task).param_args))
+        self.assertEqual(str(self.task.__class__), str(dill.loads(dill.dumps(self.task).__class__)))  
+                         
+    def tearDown(self):
+        for f in glob.glob(os.path.join(test_dir, "sgtest*")):
+            os.remove(f)
+            
 class TestMultiReqs(unittest.TestCase):
 
     def setUp(self):
