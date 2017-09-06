@@ -54,6 +54,7 @@ class Simple(luigi.Task):
     def output(self):
         return luigi.LocalTarget(os.path.join(test_dir, "sgtest_out.txt"))
 
+
 @ScatterGather(scatter, gather, 10)
 @requires(Simple)
 class Sequential(luigi.Task):
@@ -105,24 +106,26 @@ class TestSimple(unittest.TestCase):
         for f in glob.glob(os.path.join(test_dir, "sgtest*")):
             os.remove(f)
 
+
 class TestSequential(unittest.TestCase):
     def setUp(self):
-        self.task = Sequential()  
-        
+        self.task = Sequential()
+
     def test_sequential(self):
         self.assertTrue(luigi.build([self.task], local_scheduler=True))
         with self.task.output().open('r') as f:
             out = f.read()
         self.assertEqual(out, '\n'.join(["Done! Done! " + str(x) for x in range(100)]))
-        
+
     def test_pickle(self):
         self.assertEqual(self.task.param_args, dill.loads(dill.dumps(self.task).param_args))
-        self.assertEqual(str(self.task.__class__), str(dill.loads(dill.dumps(self.task).__class__)))  
-                         
+        self.assertEqual(str(self.task.__class__), str(dill.loads(dill.dumps(self.task).__class__)))
+
     def tearDown(self):
         for f in glob.glob(os.path.join(test_dir, "sgtest*")):
             os.remove(f)
-            
+
+
 class TestMultiReqs(unittest.TestCase):
 
     def setUp(self):
