@@ -5,7 +5,7 @@ from luigi.util import inherits
 from .utils import get_ext
 import multiprocessing_on_dill as multiprocessing
 
-   
+
 def indextarget(struct, idx):
     """
     Maps all Targets in a structured output to an indexed temporary file
@@ -71,12 +71,12 @@ class ScatterGather():
             return [indextarget(wt_inp, i) for i in range(decorator.N)]
 
         def __reduce__(self):
-            return lambda d,t:ScatterGather.metaProgScatter(d, t)(), (decorator, scattertask)
-        
-        scatter_cls =  type(decorator.workTask.__name__ + 'Scatter', 
-                           (scattertask, ), 
-                           {'clone_parent':decorator.workTask.clone_parent, 'requires':requires, 'output':output,
-                             '__module__': '__main__'})
+            return lambda d, t: ScatterGather.metaProgScatter(d, t)(), (decorator, scattertask)
+
+        scatter_cls = type(decorator.workTask.__name__ + 'Scatter',
+                           (scattertask, ),
+                           {'clone_parent': decorator.workTask.clone_parent, 'requires': requires, 'output': output,
+                            '__module__': '__main__'})
         return inherits(decorator.workTask)(scatter_cls)
 
     @staticmethod
@@ -94,19 +94,20 @@ class ScatterGather():
 
         def output(self):
             return indextarget(self.clone(decorator.workTask).output(), self.SG_index)
-        
+
         def __reduce__(self):
-            return lambda d,t: ScatterGather.metaProgWork(d, t)(), (decorator, worktask)
-                            
-        work_cls =  type(decorator.workTask.__name__ + 'Work', 
-                         (worktask, ), 
-                         {'SG_index':luigi.IntParameter(), 'input':input, 'output':output,
-                          'requires':requires, '__module__': '__main__'})
+            return lambda d, t: ScatterGather.metaProgWork(d, t)(), (decorator, worktask)
+
+        work_cls = type(decorator.workTask.__name__ + 'Work',
+                        (worktask, ),
+                        {'SG_index': luigi.IntParameter(), 'input': input, 'output': output,
+                         'requires': requires, '__module__': '__main__'})
         return work_cls
 
     @staticmethod
     def metaProgGather(decorator, gathertask):
         Work = ScatterGather.metaProgWork(decorator, decorator.workTask)
+
         def requires(self):
             return [self.clone(Work, SG_index=i)
                     for i in range(decorator.N)]
@@ -115,13 +116,13 @@ class ScatterGather():
             return self.clone(decorator.workTask).output()
 
         def __reduce__(self):
-            return lambda d,t:ScatterGather.metaProgGather(d, t)(), (decorator, gathertask)
-              
-        gather_cls = type(decorator.workTask.__name__ + 'Gather', 
-                          (gathertask, ), 
-                          {'SG_index':None, 'requires':requires, 'output':output, 
-                            '__module__': '__main__' })
-        
+            return lambda d, t: ScatterGather.metaProgGather(d, t)(), (decorator, gathertask)
+
+        gather_cls = type(decorator.workTask.__name__ + 'Gather',
+                          (gathertask, ),
+                          {'SG_index': None, 'requires': requires, 'output': output,
+                           '__module__': '__main__'})
+
         return inherits(decorator.workTask)(gather_cls)
 
     def __init__(self, scatterTask, gatherTask, N):
