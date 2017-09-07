@@ -6,13 +6,13 @@ from .utils import get_ext
 import multiprocessing_on_dill as multiprocessing
 
 
-def indextarget(struct, idx):
+def indextarget(struct, idx, N):
     """
     Maps all Targets in a structured output to an indexed temporary file
     """
     if isinstance(struct, Target):
         base, ext = get_ext(struct.path)
-        return LocalTarget(base + "_" + str(idx) + ext)
+        return LocalTarget(base + "_" + str(idx) + '_' + str(N) + ext)
 #    elif isinstance(struct, list):
 #        indextarget(struct[0], idx)
     else:
@@ -68,7 +68,7 @@ class ScatterGather():
         def output(self):
             wt_inp = self.clone(decorator.workTask).input()
             wt_inp = wt_inp[0] if isinstance(wt_inp, list) else wt_inp
-            return [indextarget(wt_inp, i) for i in range(decorator.N)]
+            return [indextarget(wt_inp, i, decorator.N) for i in range(decorator.N)]
 
         def __reduce__(self):
             return lambda d, t: ScatterGather.metaProgScatter(d, t)(), (decorator, scattertask)
@@ -93,7 +93,7 @@ class ScatterGather():
             return [scattered] + inp[1:] if isinstance(super(self.__class__, self).requires(), list) else scattered
 
         def output(self):
-            return indextarget(self.clone(decorator.workTask).output(), self.SG_index)
+            return indextarget(self.clone(decorator.workTask).output(), self.SG_index, decorator.N)
 
         def __reduce__(self):
             return lambda d, t: ScatterGather.metaProgWork(d, t)(), (decorator, worktask)
