@@ -158,7 +158,7 @@ class SlurmTask(SlurmExecutableTask):
                     if self.__module__ == '__main__':
                         logger.error("Pickle mode 1 in task {}".format(self.task_id))
                         module_name = os.path.basename(sys.argv[0]).rsplit('.', 1)[0]
-                        d = pickle.dumps(self)
+                        d = pickle.dumps(self, byref=True)
                         d = d.replace(b'c__main__', b"c" + module_name.encode())
                         fpickle.write(d)
                     else:
