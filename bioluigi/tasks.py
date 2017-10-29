@@ -5,6 +5,37 @@ from .slurm import SlurmExecutableTask
 from .utils import value_it, structure_apply, CheckTargetNonEmpty, get_ext
 
 
+class FetchFastqGZ(CheckTargetNonEmpty, SlurmExecutableTask):
+    '''Fetches and concatenate the fastq.gz files for ``library`` from the /reads/ server
+     :param str library: library name
+
+     Set output to a list [R1, R2]'''
+
+    library = luigi.Parameter()
+    read_dir = luigi.Parameter(default="/tgac/data/reads/*DianeSaunders*", significant=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the SLURM request params for this task
+        self.mem = 1000
+        self.n_cpu = 1
+        self.partition = "nbi-short"
+
+    def work_script(self):
+        return '''#!/bin/bash -e
+                  set -euo pipefail
+
+                  find {read_dir} -name "*{library}*_R1.fastq.gz" -type f  -print | sort | xargs cat  > {R1}.temp
+                  find {read_dir} -name "*{library}*_R2.fastq.gz" -type f  -print | sort | xargs cat  > {R2}.temp
+
+                  mv {R1}.temp {R1}
+                  mv {R2}.temp {R2}
+                 '''.format(read_dir=self.read_dir,
+                            library=self.library,
+                            R1=self.output()[0].path,
+                            R2=self.output()[1].path)
+
+
 class BWAIndex(CheckTargetNonEmpty, SlurmExecutableTask):
 
     def __init__(self, *args, **kwargs):
