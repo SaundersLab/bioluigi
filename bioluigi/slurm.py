@@ -142,6 +142,7 @@ class SlurmTask(SlurmExecutableTask):
         module_path = os.path.split(os.path.abspath(inspect.getsourcefile(self.__class__)))[0]
         return '''#!/bin/bash
                   source {python}
+                  source R-3.3.1;
                   set -euo pipefail
                   python -m bioluigi.task_runner {task} {module_path} {cwd}
                   '''.format(python=python,
