@@ -67,7 +67,7 @@ class SlurmExecutableTask(luigi.Task, SlurmMixin):
     """
     n_cpu = luigi.IntParameter(default=1, significant=False)
     mem = luigi.IntParameter(default=1000, significant=False)
-    partition = luigi.Parameter(default='tgac-medium', significant=False)
+    partition = luigi.Parameter(default='nbi-medium', significant=False)
     run_locally = luigi.BoolParameter(
         significant=False, description="run locally instead of on the cluster")
     rm_tmp = luigi.BoolParameter(default=True, significant=False)
