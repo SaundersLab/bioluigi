@@ -30,8 +30,10 @@ class SlurmMixin(ClusterBase):
 
     def _salloc(self):
         '''Request a job allocation from the scheduler, blocks until its ready then return the job id '''
-        salloc = "salloc -N 1 {args} -c {n_cpu} -n 1 --mem {total_mem} -p {partition} -J {job_name} --no-shell".format(
-            n_cpu=self.n_cpu, partition=self.partition, total_mem=int(self.mem * self.n_cpu), job_name=self.job_name, args=self.sbatch_args)
+        salloc = "salloc -N {nodes} {args} -c {n_cpu} -n {tasks} --mem {total_mem} -p {partition} -J {job_name} --no-shell".format(
+            n_cpu=self.n_cpu, partition=self.partition, total_mem=int(self.mem * self.n_cpu * self.tasks),
+            job_name=self.job_name, args=self.sbatch_args, nodes=self.nodes,
+            tasks=self.tasks)
 
         comp = subprocess.run(salloc, shell=True, stderr=subprocess.PIPE,
                               stdout=subprocess.PIPE, universal_newlines=True, check=True)
@@ -45,8 +47,10 @@ class SlurmMixin(ClusterBase):
 
     def _srun(self, launch, alloc):
         '''Run the task in launch in allocation alloc'''
-        srun = "srun -n 1 --kill-on-bad-exit  --quit-on-interrupt --jobid {jobid} -c {n_cpu} --mem-per-cpu {mem}  -o {outfile} -e {errfile} {launch}".format(
-            n_cpu=self.n_cpu, jobid=alloc, mem=self.mem, launch=launch, outfile=self.outfile, errfile=self.errfile)
+        srun = "srun -n {tasks} --kill-on-bad-exit  --quit-on-interrupt --jobid {jobid} -c {n_cpu} --mem-per-cpu {mem} -o {outfile} -e {errfile} {launch}".format(
+            n_cpu=self.n_cpu, jobid=alloc, mem=self.mem, launch=launch,
+            outfile=self.outfile, errfile=self.errfile, nodes=self.nodes,
+            tasks=self.tasks)
         subprocess.run(srun, shell=True, check=True)
 
     def _slaunch(self, launch):
@@ -66,6 +70,9 @@ class SlurmExecutableTask(luigi.Task, SlurmMixin):
 
     """
     n_cpu = luigi.IntParameter(default=1, significant=False)
+    tasks = luigi.IntParameter(default=1, significant=False)
+    nodes = luigi.IntParameter(default=1, significant=False)
+
     mem = luigi.IntParameter(default=1000, significant=False)
     partition = luigi.Parameter(default='nbi-medium', significant=False)
     run_locally = luigi.BoolParameter(
