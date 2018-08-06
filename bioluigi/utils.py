@@ -5,6 +5,40 @@ import gzip
 from collections import defaultdict
 
 
+def parseHISATLog(logfile, lib):
+    '''Parse the star Log.final.out file :param: logfile for the library :param: lib
+       returns a pandas.Series of the fields defined in keep'''
+
+    keep = ['Total pairs',
+            'Aligned concordantly 1 time',
+            'Aligned concordantly >1 times',
+            'Aligned 1 time',
+            'Aligned >1 times']
+
+    try:
+        s = pd.Series()
+        with open(logfile, 'r') as f:
+            for line in f:
+                split = line.strip().split(":", 1)
+                if split[0].strip() == 'Completed':
+                    s['datetime'] = split[1].strip()
+
+                elif split[0] in keep:
+                    n = re.findall('^([0-9]+)', split[1].strip())
+                    if len(n) > 0:
+                        s[split[0]] = int(n[0])
+                    pc = re.findall("(\d+\.\d+)\\%", split[1].strip())
+                    if len(pc) > 0:
+                        s[split[0] + ' %'] = float(pc[0])
+                elif split[0] == 'Overall alignment rate':
+                    s[split[0]] = float(re.findall("(\d+\.\d+)\\%", split[1].strip())[0])
+
+    except FileNotFoundError:
+        s = pd.Series(dict(zip(keep, [float('nan')] * len(keep))))
+
+    s['Library'] = lib
+    return s
+
 ###############################################################################
 #                          dict/list handling                                 #
 ###############################################################################
