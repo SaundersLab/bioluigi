@@ -56,6 +56,7 @@ class AddGFF(CheckTargetNonEmpty, SlurmExecutableTask):
         return '''#!/bin/bash
                   source perl_activeperl-5.18.2.1802
                   source berkeleydb-4.3;
+                  export PATH=../node-v8.11.3-linux-x64/bin:$PATH
                   set -euo  pipefail
 
                   cd {jbrowse_dir}
@@ -69,3 +70,40 @@ class AddGFF(CheckTargetNonEmpty, SlurmExecutableTask):
                            gff=self.input()['gff'].path,
                            jbrowse_dir=self.jbrowse_dir,
                            name=self.name)
+
+
+class AddPortcullis(SlurmExecutableTask):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the SLURM request params for this task
+        self.mem = 2000
+        self.n_cpu = 1
+        self.partition = "nbi-short"
+
+    def output(self):
+        return LocalTarget(os.path.join(self.input()['genome'].path, 'tracks', 'portcullis.gz'))
+
+    def work_script(self):
+        return '''#!/bin/bash
+                  source perl_activeperl-5.18.2.1802
+                  source berkeleydb-4.3;
+                  export PATH=../node-v8.11.3-linux-x64/bin:$PATH
+                  source portcullis-1.1.0
+                  source vcftools-0.1.13
+                  source bedtools-2.17.0
+                  set -euo  pipefail
+
+                  cd {portcullis_dir}
+                  junctools convert -if bed -of ibed  -o portcullis.pass.junctions.ibed {input}
+                  bedtools sort -i portcullis.pass.junctions.ibed | bgzip -c >  portcullis.pass.junctions.sorted.ibed.gz
+                  tabix -p bed portcullis.pass.junctions.sorted.ibed.gz
+
+                  cp portcullis.pass.junctions.sorted.ibed.gz {genome}/tracks/portcullis.gz
+                  cp portcullis.pass.junctions.sorted.ibed.gz.tbi {genome}/tracks/portcullis.gz.tbi
+                '''.format(genome=self.input()['genome'].path,
+                           portcullis_dir=self.input()['portcullis'].path,
+                           input=os.path.join(self.input()['portcullis'].path, 'portcullis.pass.junctions.bed'))
+
+
+
