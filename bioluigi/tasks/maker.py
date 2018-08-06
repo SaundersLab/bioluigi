@@ -266,3 +266,28 @@ class Maker2Jbrowse(CheckTargetNonEmpty, SlurmExecutableTask):
                   mv {output}_temp {output}
                  '''.format(input=self.input().path,
                             output=self.output().path)
+
+
+class AEDDist(CheckTargetNonEmpty, SlurmExecutableTask):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the SLURM request params for this task
+        self.mem = 1000
+        self.n_cpu = 1
+        self.partition = "nbi-short"
+
+    def output(self):
+        return LocalTarget(os.path.join(get_ext(self.input().path)[0] + ".aed"))
+
+    def work_script(self):
+        return '''#!/bin/bash -e
+                  source maker-2.31.8
+                  set -euo pipefail
+
+                  /nbi/software/testing/maker/2.31.8/src/maker/bin/AED_cdf_generator.pl -b 0.01 {input} > {output}.temp
+
+                  mv {output}.temp {output}
+
+                 '''.format(input=self.input().path,
+                            output=self.output().path)
