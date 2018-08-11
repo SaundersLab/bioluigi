@@ -187,3 +187,35 @@ class SlurmTask(SlurmExecutableTask):
         self._init_tmp()
         self._dump()
         super().run()
+
+
+class SlurmMPITask(SlurmExecutableTask):
+    '''Slurm breaks when running mpiexec inside of an existing srun command,
+       so if the task needs to use MPI use this slurm task instead of SlurmExectutableTask'''
+
+    def _salloc(self):
+        '''Request a job allocation from the scheduler, blocks until its ready then return the job id '''
+        salloc = "salloc -N {nodes} {args} -c {n_cpu} -n {tasks} --mem {total_mem} -p {partition} -J {job_name} sh".format(
+            n_cpu=self.n_cpu, partition=self.partition, total_mem=int(self.mem * self.n_cpu * self.tasks),
+            job_name=self.job_name, args=self.sbatch_args, nodes=self.nodes,
+            tasks=self.tasks)
+
+        self.proc = subprocess.Popen(salloc, shell=True, stderr=subprocess.PIPE, stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE, universal_newlines=True)
+
+        grant_id = re.compile('salloc: Granted job allocation (\S+)')
+
+        while True:
+            line = self.proc.stderr.readline()
+            if grant_id.match(line) is not None:
+                return (grant_id.match(line).groups()[0])
+
+    def _srun(self, launch, alloc):
+        self.proc.stdin.write(self.work_script() + "\n")
+        self.proc.stdin.flush()
+        self.proc.communicate()
+
+        if self.proc.returncode != 0:
+            raise subprocess.CalledProcessError(self.proc.returncode, self.proc.args)
+
+

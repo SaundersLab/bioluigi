@@ -17,8 +17,6 @@ maker_opts_keys = ['genome', 'organism_type', 'maker_gff', 'est_pass', 'altest_p
                    'map_forward', 'keep_preds', 'split_hit', 'single_exon', 'single_length',
                    'correct_est_fusion', 'tries', 'clean_try', 'clean_up', 'TMP']
 
-# TODO make the MAKER pipeline use base_dir parameter   to be consistent with other tasks
-
 
 class MAKER(SlurmExecutableTask):
 
@@ -31,7 +29,8 @@ class MAKER(SlurmExecutableTask):
         super().__init__(*args, **kwargs)
         # Set the SLURM request params for this task
         self.mem = 2000
-        self.n_cpu = 12
+        self.n_cpu = 1
+        self.tasks = 12
         self.partition = "nbi-medium,RG-Diane-Saunders"
         self.log = os.path.join(self.base_dir, 'maker',
                                 self.maker_prefix + ".maker.output",
@@ -69,13 +68,12 @@ class MAKER(SlurmExecutableTask):
         self.write_maker_opts()
 
         return '''#!/bin/bash
-                  source openmpi-1.8.4;
                   source maker-2.31.8
                   source genemark-4.33_ES_ET;
                   set -euo pipefail
 
                   cd {dir}
-                  mpirun -n {n_cpu} maker {maker_opts} -base {base} &> {log}
+                  mpiexec -n {n_cpu} maker {maker_opts} -base {base} &> {log}
 
         '''.format(maker_opts=self.maker_opts_path,
                    dir=os.path.split(os.path.dirname(self.output().path))[0],
@@ -124,6 +122,7 @@ class GFFMerge(CheckTargetNonEmpty, SlurmExecutableTask):
         self.partition = "nbi-short"
         self.dir = os.path.dirname(self.input().path)
         self.name = os.path.basename(self.input().path)[:-27]
+        self.genes_only = False
 
     def output(self):
         return LocalTarget(os.path.join(self.dir, self.name + ".all.gff"))
@@ -133,11 +132,12 @@ class GFFMerge(CheckTargetNonEmpty, SlurmExecutableTask):
                   source maker-2.31.8
                   set -euo pipefail
 
-                  gff3_merge -n -d {input} -o {output}.temp
+                  gff3_merge -n {genes_only} -d {input} -o {output}.temp
 
                   mv {output}.temp {output}
                  '''.format(input=self.input().path,
-                            output=self.output().path)
+                            output=self.output().path,
+                            genes_only='-g' if self.genes_only else '')
 
 
 class Maker2ZFF(CheckTargetNonEmpty, SlurmExecutableTask):
@@ -240,6 +240,7 @@ class TrainSNAP(CheckTargetNonEmpty, SlurmExecutableTask):
 
 
 class Maker2Jbrowse(CheckTargetNonEmpty, SlurmExecutableTask):
+    jbrowse_dir = luigi.Parameter()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -258,14 +259,15 @@ class Maker2Jbrowse(CheckTargetNonEmpty, SlurmExecutableTask):
                   source perl_activeperl-5.18.2.1802
                   source berkeleydb-4.3;
                   set -euo pipefail
-                  export PATH=/usr/users/JIC_a1/buntingd/GenomeAnnotation/Jbrowse/JBrowse-1.15.0/bin:$PATH
-                  cd /usr/users/JIC_a1/buntingd/GenomeAnnotation/Jbrowse/JBrowse-1.15.0
+                  export PATH={jbrowse_dir}/bin:$PATH
+                  cd {jbrowse_dir}
 
                   maker2jbrowse -d {input} -o {output}_temp
 
                   mv {output}_temp {output}
                  '''.format(input=self.input().path,
-                            output=self.output().path)
+                            output=self.output().path,
+                            jbrowse_dir=self.jbrowse_dir)
 
 
 class AEDDist(CheckTargetNonEmpty, SlurmExecutableTask):
