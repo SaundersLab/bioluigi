@@ -48,8 +48,8 @@ class HISAT(CheckTargetNonEmpty, SlurmExecutableTask):
         output = get_ext(self.input['reads'][0])
         output = output[:-3] if output[-3:] == '_R1' else output
         return {
-            'hisat_bam': LocalTarget(output + '.bam'),
-            'hisat_log': LocalTarget(output + '.hisat.log')
+            'bam': LocalTarget(output + '.bam'),
+            'log': LocalTarget(output + '.hisat.log')
         }
 
     def work_script(self):
@@ -63,16 +63,16 @@ class HISAT(CheckTargetNonEmpty, SlurmExecutableTask):
                          -1 {R1} -2 {R2}  \
                          --new-summary \
                          {dta_cufflinks} \
-                         --summary-file {hisat_log}.temp | samtools view -bS - > {hisat_bam}.temp
+                         --summary-file {log}.temp | samtools view -bS - > {bam}.temp
 
-                  mv {hisat_log}.temp {hisat_log}
+                  mv {log}.temp {log}
                   dt=$(date '+%d/%m/%Y %H:%M:%S');
-                  echo "\ndatetime : $dt" >> {hisat_log}
-                  mv {hisat_bam}.temp {hisat_bam}
+                  echo "\ndatetime : $dt" >> {log}
+                  mv {bam}.temp {bam}
 
                   '''.format(dta_cufflinks='--dta-cufflinks' if self.dta_cufflinks else '',
-                             hisat_bam=self.output()['hisat_bam'].path,
-                             hisat_log=self.output()['hisat_log'].path,
+                             bam=self.output()['bam'].path,
+                             log=self.output()['log'].path,
                              hisat_genome=self.input()['genome'].path,
                              n_cpu=self.n_cpu-1,
                              R1=self.input()['reads'][0].path,
