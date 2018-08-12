@@ -15,3 +15,4 @@ from .trinity import *
 from .portcullis import *
 from .cufflinks import *
 from .mikado import *
+from .evm import *
