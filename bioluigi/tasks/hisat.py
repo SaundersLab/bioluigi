@@ -42,6 +42,7 @@ class HISAT(CheckTargetNonEmpty, SlurmExecutableTask):
         self.mem = 3000
         self.n_cpu = 4
         self.partition = "nbi-medium,RG-Diane-Saunders"
+        self.dta_cufflinks = False
 
     def output(self):
         output = get_ext(self.input['reads'][0])
@@ -61,6 +62,7 @@ class HISAT(CheckTargetNonEmpty, SlurmExecutableTask):
                          -x {hisat_genome} \
                          -1 {R1} -2 {R2}  \
                          --new-summary \
+                         {dta_cufflinks} \
                          --summary-file {hisat_log}.temp | samtools view -bS - > {hisat_bam}.temp
 
                   mv {hisat_log}.temp {hisat_log}
@@ -68,9 +70,10 @@ class HISAT(CheckTargetNonEmpty, SlurmExecutableTask):
                   echo "\ndatetime : $dt" >> {hisat_log}
                   mv {hisat_bam}.temp {hisat_bam}
 
-                  '''.format(hisat_bam=self.output()['hisat_bam'].path,
+                  '''.format(dta_cufflinks='--dta-cufflinks' if self.dta_cufflinks else '',
+                             hisat_bam=self.output()['hisat_bam'].path,
                              hisat_log=self.output()['hisat_log'].path,
                              hisat_genome=self.input()['genome'].path,
-                             n_cpu=self.n_cpu,
+                             n_cpu=self.n_cpu-1,
                              R1=self.input()['reads'][0].path,
                              R2=self.input()['reads'][1].path,)
