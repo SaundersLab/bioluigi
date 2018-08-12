@@ -22,7 +22,7 @@ class GTFtoGFF3(CheckTargetNonEmpty, SlurmExecutableTask):
                   source gffread-0.9.8
                   set -euo pipefail
 
-                  gffread {input} -o {output}.temp
+                  gffread {input} -o- | grep -ve'#' > {output}.temp
 
                   mv {output}.temp {output}
                  '''.format(input=self.input().path,
