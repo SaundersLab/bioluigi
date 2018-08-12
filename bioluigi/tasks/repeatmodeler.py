@@ -82,8 +82,8 @@ class RepeatMasker(CheckTargetNonEmpty, SlurmExecutableTask):
                                 -dir {output_dir}_temp \
                                 {input}
 
-                  mv {output_dir}_temp {output_dir}
+                  mv -T {output_dir}_temp {output_dir}
                   '''.format(input=self.input().path,
                              #repeat_modeler=self.input()['repeat_modeler'].path,
-                             output_dir=self.output().path,
+                             output_dir=os.path.dirname(self.output().path),
                              n_cpu=self.n_cpu)

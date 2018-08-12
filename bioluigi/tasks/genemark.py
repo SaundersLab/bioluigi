@@ -31,7 +31,7 @@ class GenemarkESTrain(CheckTargetNonEmpty, SlurmExecutableTask):
                                 -v \
                                 --sequence {input}
 
-                mv {output_dir}_temp {output_dir}
-                '''.format(output_dir=os.path.dirname(self.output().path),
+                mv -T {output_dir}_temp {output_dir}
+                '''.format(output_dir=os.path.join(self.base_dir, 'genemark'),
                            input=self.input().path,
                            n_cpu=self.n_cpu)
